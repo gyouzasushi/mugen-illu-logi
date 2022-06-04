@@ -3,18 +3,21 @@ use rand::prelude::*;
 use std::fmt;
 
 pub type Hints = (Vec<Vec<usize>>, Vec<Vec<usize>>);
-pub fn gen_inner(h: usize, w: usize) -> (Vec<bool>, Hints) {
-    let mut rng = rand::thread_rng();
+pub fn gen_inner(h: usize, w: usize, seed: u64) -> (Vec<bool>, Hints) {
+    let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(seed);
     let (grid, hints) = loop {
         let mut board = Board::new(h, w, (0..h * w).map(|_| Some(rng.gen_bool(0.5))).collect());
         let hints = board.get_hints();
 
-        let mut full_line_doesnt_exist = true;
-        full_line_doesnt_exist &= hints.0.iter().all(|hint| hint.get(0) != Some(&w));
-        full_line_doesnt_exist &= hints.1.iter().all(|hint| hint.get(0) != Some(&h));
+        let mut full_or_empty_line_doesnt_exist = true;
+        full_or_empty_line_doesnt_exist &= hints.0.iter().all(|hint| hint.get(0) != Some(&w));
+        full_or_empty_line_doesnt_exist &= hints.0.iter().all(|hint| !hint.is_empty());
+        full_or_empty_line_doesnt_exist &= hints.1.iter().all(|hint| hint.get(0) != Some(&h));
+        full_or_empty_line_doesnt_exist &= hints.1.iter().all(|hint| !hint.is_empty());
 
         let mut solver = Solver::new(h, w, hints.clone());
-        if solver.solve() && full_line_doesnt_exist {
+        if solver.solve() && full_or_empty_line_doesnt_exist {
+            println!("{:?}", solver.board);
             break (solver.board.get_plain(), hints);
         }
     };

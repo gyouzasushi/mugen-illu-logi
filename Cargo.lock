@@ -58,6 +58,7 @@ dependencies = [
  "rand",
  "rand_chacha",
  "rand_pcg",
+ "svg",
  "wasm-bindgen",
  "web-sys",
  "wee_alloc",
@@ -170,6 +171,12 @@ checksum = "59cad018caf63deb318e5a4586d99a24424a364f40f1e5778c29aca23f4fc73e"
 dependencies = [
  "rand_core",
 ]
+
+[[package]]
+name = "svg"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e72d8b19ab05827afefcca66bf47040c1e66a0901eb814784c77d4ec118bd309"
 
 [[package]]
 name = "syn"
