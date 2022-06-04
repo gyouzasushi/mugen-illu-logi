@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>mugen-illu-logi</title>
+</head>
+
+<body>
+  <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+  <p style="position: relative; left: 200px;">
+    <label>
+      N:
+      <select id="size">
+        <option>5</option>
+        <option>10</option>
+        <option>15</option>
+      </select>
+    </label>
+    <label>
+      &emsp;
+      Seed:
+      <input type="number" id="seed" value="0" min="0" max="18446744073709551615" />
+      &emsp;
+    </label>
+  </p>
+  <div id="gyouza" ; style="position: absolute; z-index: 1;"></div>
+  <div id="sushi" ; style="position: absolute; z-index: 2;"></div>
+  <div id="commands" style="left: 200px;">
+    <p>
+      &emsp;&emsp;
+      &uarr; : <kbd>W</kbd>&emsp;&emsp;
+      &larr; : <kbd>A</kbd>&emsp;&emsp;
+      &darr; : <kbd>S</kbd>&emsp;&emsp;
+      &rarr; : <kbd>D</kbd>
+    </p>
+    <p>
+      &#9745; : <kbd>Enter</kbd>&emsp;
+      &#9746; : <kbd>Ctrl + Enter</kbd>&emsp;
+      &#10226; : <kbd>Ctrl + R</kbd>&emsp;
+      &#10227; : <kbd>Ctrl + Y</kbd>
+    </p>
+  </div>
+  <div id="foot" style="left: 200px;visibility: hidden;">
+    <label style="vertical-align: top">
+      Congratulations!
+    </label>
+    <p>
+      <input type="button" id="next" value="Next" style="vertical-align : top;">&ensp;
+      <input type="button" id="save_png" value="Save as PNG" style="vertical-align: top;">&ensp;
+      <input type="button" id="save_gif" value="Save as Animation GIF" style="vertical-align : top;">&ensp;
+      <input type="button" id="share" value="Share on Twitter" style="vertical-align : top;">&ensp;
+    </p>
+  </div>
+  <script src="./bootstrap.js"></script>
+</body>
+
+</html>
