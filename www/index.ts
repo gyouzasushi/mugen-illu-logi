@@ -210,7 +210,6 @@ function newGame(seed: BigInt) {
 
     document.getElementById("gyouza")!.innerHTML = vis_board(N, N, board, hints);
     document.getElementById("sushi")!.innerHTML = vis_cursor(N, N, 0, 0);
-    seedInput.value = seed.toString();
     hideAll();
 }
 

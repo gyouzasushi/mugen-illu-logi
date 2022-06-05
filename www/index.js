@@ -203,7 +203,6 @@ function newGame(seed) {
     redoHistory = new Array();
     document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints);
     document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, 0, 0);
-    seedInput.value = seed.toString();
     hideAll();
 }
 function hideAll() {
