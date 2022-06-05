@@ -43,7 +43,6 @@ let undoHistory = new Array();
 let redoHistory = new Array();
 let cleared = false;
 let gameover = false;
-const ;
 function isCorrect(board, ans) {
     for (let i = 0; i < N * N; i++) {
         if (board[i] !== ans[i])
@@ -188,6 +187,22 @@ copyButton.onclick = function () {
         /* clipboard write failed */
     });
 };
+isGamingMode.onclick = function () {
+    if (isGamingMode.checked) {
+        sessionStorage.setItem('gaming', 'true');
+    }
+    else {
+        sessionStorage.setItem('gaming', 'false');
+    }
+};
+isHardMode.onclick = function () {
+    if (isHardMode.checked) {
+        sessionStorage.setItem('hard', 'true');
+    }
+    else {
+        sessionStorage.setItem('hard', 'false');
+    }
+};
 function newGame(seed) {
     ans = (0, pkg_1.gen)(N, N, seed);
     hints = get_hints(N, N, ans);
@@ -224,10 +239,15 @@ function load() {
     const url = new URL(location.toString());
     N = parseInt(url.searchParams.get('size') || "10");
     const seed = url.searchParams.get('seed') || (0, pkg_1.gen_seed)();
+    if (!url.searchParams.has('size') || !url.searchParams.has('seed')) {
+        url.searchParams.set('size', N.toString());
+        url.searchParams.set('seed', seed);
+        location.href = url.toString();
+    }
     seedInput.value = seed;
     sizeSelect.options[N / 5 - 1].selected = true;
-    isGamingMode.checked = url.searchParams.has('gaming');
-    isHardMode.checked = url.searchParams.has('hard');
+    isGamingMode.checked = sessionStorage.getItem('gaming') === 'true';
+    isHardMode.checked = sessionStorage.getItem('hard') === 'true';
     hideAll();
     newGame(BigInt(seed));
 }

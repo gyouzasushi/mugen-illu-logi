@@ -193,6 +193,21 @@ copyButton.onclick = function () {
     });
 }
 
+isGamingMode.onclick = function () {
+    if (isGamingMode.checked) {
+        sessionStorage.setItem('gaming', 'true');
+    } else {
+        sessionStorage.setItem('gaming', 'false');
+    }
+}
+isHardMode.onclick = function () {
+    if (isHardMode.checked) {
+        sessionStorage.setItem('hard', 'true');
+    } else {
+        sessionStorage.setItem('hard', 'false');
+    }
+}
+
 function newGame(seed: BigInt) {
     ans = gen(N, N, seed);
     hints = get_hints(N, N, ans);
@@ -236,10 +251,15 @@ function load() {
     const url = new URL(location.toString());
     N = parseInt(url.searchParams.get('size') || "10");
     const seed = url.searchParams.get('seed') || gen_seed();
+    if (!url.searchParams.has('size') || !url.searchParams.has('seed')) {
+        url.searchParams.set('size', N.toString());
+        url.searchParams.set('seed', seed);
+        location.href = url.toString();
+    }
     seedInput.value = seed;
     sizeSelect.options[N / 5 - 1].selected = true;
-    isGamingMode.checked = url.searchParams.has('gaming');
-    isHardMode.checked = url.searchParams.has('hard');
+    isGamingMode.checked = sessionStorage.getItem('gaming') === 'true';
+    isHardMode.checked = sessionStorage.getItem('hard') === 'true';
     hideAll();
     newGame(BigInt(seed));
 }
