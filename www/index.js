@@ -58,32 +58,30 @@ const FALSE = 0;
 const TRUE = 1;
 const NONE = 2;
 document.onkeydown = function (ev) {
-    if (cleared)
-        return;
-    if (ev.key == KEY_LEFT) {
+    if (!cleared && ev.key == KEY_LEFT) {
         cursor.x = (cursor.x - 1 + N) % N;
         document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
         pre.enter = false;
     }
-    if (ev.key == KEY_RIGHT) {
+    if (!cleared && ev.key == KEY_RIGHT) {
         cursor.x = (cursor.x + 1 + N) % N;
         document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
         pre.enter = false;
     }
-    if (ev.key == KEY_UP) {
+    if (!cleared && ev.key == KEY_UP) {
         cursor.y = (cursor.y - 1 + N) % N;
         document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
         pre.enter = false;
     }
-    if (ev.key == KEY_DOWN) {
+    if (!cleared && ev.key == KEY_DOWN) {
         cursor.y = (cursor.y + 1 + N) % N;
         document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
         pre.enter = false;
     }
-    if (ev.key == 'Enter') {
+    if (!cleared && ev.key == 'Enter') {
         pressEnter = true;
     }
-    if (pressEnter) {
+    if (!cleared && pressEnter) {
         if (!pre.enter || pre.ctrl !== ev.ctrlKey) {
             if (!pre.undo)
                 redoHistory = [];
@@ -118,9 +116,14 @@ document.onkeydown = function (ev) {
         document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
         pre.x = cursor.x, pre.y = cursor.y, pre.ctrl = false, pre.undo = false;
     }
-    if (isCorrect(board, ans)) {
-        document.getElementById("foot").style.visibility = 'visible';
+    const correct = isCorrect(board, ans);
+    if (!cleared && correct) {
+        showFoot();
         cleared = true;
+    }
+    else if (cleared && !correct) {
+        hideFoot();
+        cleared = false;
     }
 };
 document.onkeyup = function (ev) {
@@ -160,17 +163,25 @@ function newGame(seed) {
     document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints);
     document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, 0, 0);
 }
+function hideFoot() {
+    document.getElementById("foot").style.visibility = 'hidden';
+    document.getElementById("foot").style.position = 'relative';
+    document.getElementById("foot").style.top = `${N * 24 + 260}px`;
+    document.getElementById("commands").style.position = 'relative';
+    document.getElementById("commands").style.top = `${N * 24 + 230}px`;
+}
+function showFoot() {
+    document.getElementById("foot").style.visibility = 'visible';
+    document.getElementById("foot").style.top = `${N * 24 + 160}px`;
+    document.getElementById("commands").style.top = `${N * 24 + 340}px`;
+}
 function load() {
     const url = new URL(location.toString());
     N = parseInt(url.searchParams.get('size') || "10");
     const seed = url.searchParams.get('seed') || (0, pkg_1.gen_seed)();
     seedInput.value = seed;
     sizeSelect.options[N / 5 - 1].selected = true;
-    document.getElementById("foot").style.visibility = 'hidden';
-    document.getElementById("foot").style.position = 'relative';
-    document.getElementById("foot").style.top = `${N * 24 + 260}px`;
-    document.getElementById("commands").style.position = 'relative';
-    document.getElementById("commands").style.top = `${N * 24 + 230}px`;
+    hideFoot();
     newGame(BigInt(seed));
 }
 load();
@@ -183,7 +194,6 @@ nextButtton.onclick = function () {
 };
 savePngButton.onclick = function () {
     const svgData = (0, pkg_1.vis_grid)(N, N, 15, board);
-    (svgData);
     const svg = new DOMParser().parseFromString(svgData, "image/svg+xml").getElementById("vis");
     const canvas = document.createElement("canvas");
     canvas.width = Number(svg === null || svg === void 0 ? void 0 : svg.getAttribute("width"));
@@ -202,14 +212,12 @@ savePngButton.onclick = function () {
 };
 saveGifButton.onclick = function () {
     const boards = Int32Array.from(undoHistory.map((his) => Array.from(his[0])).flat());
-    (boards);
     const d = 100 / N;
     const svgDatas = (0, pkg_1.vis_gif)(N, N, d, boards, undoHistory.length).split("$");
     saveGifButton.disabled = true;
     saveGifButton.value = "Generating GIF...";
     const _image = new Image;
     _image.onload = function () {
-        ("loaded!");
         const width = d * N;
         const height = d * N;
         const GIFEncoder = require('gifencoder');
@@ -220,7 +228,6 @@ saveGifButton.onclick = function () {
         encoder.start();
         rec(0);
         function rec(t) {
-            (`t = ${t}`);
             if (t == undoHistory.length) {
                 encoder.finish();
                 const a = document.createElement("a");
@@ -233,19 +240,15 @@ saveGifButton.onclick = function () {
                 saveGifButton.value = "Save as Animation GIF";
                 return;
             }
+            saveGifButton.value = `Generating GIF... ${Math.floor(100 * t / undoHistory.length)}%`;
             const canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext("2d");
             const image = new Image;
-            ('loading');
             image.onload = function () {
-                ('drawing');
                 ctx.drawImage(image, 0, 0);
-                ('finish drawing');
-                ('adding frame');
                 encoder.addFrame(ctx);
-                ('finish adding frame');
                 rec(t + 1);
             };
             image.src = "data:image/svg+xml;charset=utf-8;base64," + btoa(unescape(encodeURIComponent(svgDatas[t])));
@@ -255,11 +258,11 @@ saveGifButton.onclick = function () {
 };
 shareButton.onclick = function () {
     const seed = seedInput.value;
-    const text = `無限イラロジ ${N}x${N} の Seed = ${seed} をクリア！🥟🍣\n`;
+    const text = `無限イラロジ ${N}x${N} の Seed = ${seed} をクリア！🥟🍣`;
     const url = new URL(location.toString());
     url.searchParams.set('size', `${N}`);
     url.searchParams.set('seed', `${seed}`);
     const hashtag = 'mugen_illu_logi';
-    const link = `https://twitter.com/intent/tweet?hashtags=${hashtag}&text=${text}&url=${url.toString()}`;
-    window.open(encodeURI(link));
+    const link = `https://twitter.com/intent/tweet?hashtags=${hashtag}&text=${text}%0D%0A&url=${url.toString().replace('&', '%26')}`;
+    window.open(link);
 };
