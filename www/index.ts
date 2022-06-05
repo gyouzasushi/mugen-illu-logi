@@ -161,6 +161,7 @@ document.onkeyup = function (ev: KeyboardEvent) {
 
 const seedInput = <HTMLInputElement>document.getElementById("seed")!;
 const sizeSelect = <HTMLSelectElement>document.getElementById("size")!;
+const copyButton = <HTMLSelectElement>document.getElementById("copy")!;
 const isGamingMode = <HTMLInputElement>document.getElementById("gaming")!;
 const isHardMode = <HTMLInputElement>document.getElementById("hard")!;
 const nextButtton = document.getElementById("next")!;
@@ -169,16 +170,30 @@ const saveGifButton = <HTMLButtonElement>document.getElementById("save_gif")!;
 const shareButton = document.getElementById("share")!;
 
 seedInput.onchange = function () {
-    const seed = seedInput.value;
-    const url = new URL(location.toString());
-    url.searchParams.set('seed', seed);
-    location.href = url.toString();
+    const seed = BigInt(seedInput.value);
+    // const url = new URL(location.toString());
+    // url.searchParams.set('seed', seed);
+    // location.href = url.toString();
+    newGame(seed);
 }
 sizeSelect.onchange = function () {
     N = parseInt(sizeSelect.options[sizeSelect.selectedIndex].value);
+    const seed = BigInt(seedInput.value);
+    newGame(seed);
+    // const url = new URL(location.toString());
+    // url.searchParams.set('size', `${N}`);
+    // location.href = url.toString();
+}
+copyButton.onclick = function () {
     const url = new URL(location.toString());
+    const seed = seedInput.value;
     url.searchParams.set('size', `${N}`);
-    location.href = url.toString();
+    url.searchParams.set('seed', `${seed}`);
+    navigator.clipboard.writeText(url.toString()).then(function () {
+        /* clipboard successfully set */
+    }, function () {
+        /* clipboard write failed */
+    });
 }
 
 function newGame(seed: BigInt) {
@@ -195,6 +210,8 @@ function newGame(seed: BigInt) {
 
     document.getElementById("gyouza")!.innerHTML = vis_board(N, N, board, hints);
     document.getElementById("sushi")!.innerHTML = vis_cursor(N, N, 0, 0);
+    seedInput.value = seed.toString();
+    hideAll();
 }
 
 function hideAll() {
@@ -211,11 +228,13 @@ function hideAll() {
 }
 
 function showFoot() {
+    document.getElementById("foot")!.style.top = `${N * 24 + 160}px`;
     document.getElementById("foot")!.style.visibility = 'visible';
     document.getElementById("commands")!.style.top = `${N * 24 + 340}px`;
 }
 
 function showGameover() {
+    document.getElementById("gameover")!.style.top = `${N * 24 + 70}px`;
     document.getElementById("gameover")!.style.visibility = 'visible';
     document.getElementById("commands")!.style.top = `${N * 24 + 270}px`;
 }
@@ -226,18 +245,17 @@ function load() {
     const seed = url.searchParams.get('seed') || gen_seed();
     seedInput.value = seed;
     sizeSelect.options[N / 5 - 1].selected = true;
-
-    hideAll();
     newGame(BigInt(seed));
 }
 load();
 window.onload = load;
 
 nextButtton.onclick = function () {
-    const seed = gen_seed();
-    const url = new URL(location.toString());
-    url.searchParams.set('seed', seed);
-    location.href = url.toString();
+    const seed = BigInt(gen_seed());
+    newGame(seed);
+    // const url = new URL(location.toString());
+    // url.searchParams.set('seed', seed);
+    // location.href = url.toString();
 }
 savePngButton.onclick = function () {
     const svgData = vis_grid(N, N, 15, board);
