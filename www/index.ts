@@ -1,4 +1,4 @@
-import { gen, gen_seed, vis_grid, vis_gif, vis_board, vis_cursor, set } from '../pkg';
+import { gen, gen_seed, vis_grid, vis_gif, vis_board, vis_gaming_boards, vis_cursor, set } from '../pkg';
 
 function get_hints(h: number, w: number, board: Int32Array): Int32Array {
     const hints = new Array<number>();
@@ -32,6 +32,7 @@ let ans = gen(N, N, BigInt(0));
 let hints = get_hints(N, N, ans);
 
 let board = new Int32Array;
+let gamingBoardSvgs: string[];
 let cursor = { x: 0, y: 0 };
 let pre = { x: -1, y: -1, ctrl: false, enter: false, undo: false };
 let pressEnter = false;
@@ -119,11 +120,27 @@ document.onkeydown = function (ev: KeyboardEvent) {
     if (!cleared && correct) {
         showFoot();
         cleared = true;
+        if (isGamingMode.checked) {
+            gamingBoardSvgs = vis_gaming_boards(N, N, board, hints).split("$");
+
+            let t = 0;
+            function drawGaming() {
+                if (cleared) {
+                    document.getElementById("gyouza")!.innerHTML = gamingBoardSvgs[t];
+                    t += 1;
+                    if (t >= 12) t -= 12;
+                    requestAnimationFrame(drawGaming);
+                }
+            }
+            drawGaming();
+        }
     } else if (cleared && !correct) {
         hideFoot();
         cleared = false;
     }
 };
+
+
 
 document.onkeyup = function (ev: KeyboardEvent) {
     if (ev.key == 'Enter') {
@@ -136,6 +153,8 @@ document.onkeyup = function (ev: KeyboardEvent) {
 
 const seedInput = <HTMLInputElement>document.getElementById("seed")!;
 const sizeSelect = <HTMLSelectElement>document.getElementById("size")!;
+const isGamingMode = <HTMLInputElement>document.getElementById("gaming")!;
+const isHardMode = <HTMLInputElement>document.getElementById("hard")!;
 const nextButtton = document.getElementById("next")!;
 const savePngButton = document.getElementById("save_png")!;
 const saveGifButton = <HTMLButtonElement>document.getElementById("save_gif")!;
@@ -220,7 +239,6 @@ savePngButton.onclick = function () {
     }
     image.src = "data:image/svg+xml;charset=utf-8;base64," + btoa(unescape(encodeURIComponent(svgData)));
 }
-
 
 saveGifButton.onclick = function () {
     const boards = Int32Array.from(undoHistory.map((his) => Array.from(his[0])).flat());

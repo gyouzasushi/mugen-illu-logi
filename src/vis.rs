@@ -50,6 +50,7 @@ pub fn vis_board_inner(
     w: usize,
     board: &Vec<Vec<Option<bool>>>,
     hints: &(Vec<Vec<i32>>, Vec<Vec<i32>>),
+    fill: &str,
 ) -> String {
     let hints_hidden = get_hints_hidden(board, hints);
 
@@ -75,7 +76,7 @@ pub fn vis_board_inner(
                     .set(
                         "fill",
                         if board[y][x] == Some(true) {
-                            "black"
+                            fill
                         } else {
                             "white"
                         },
@@ -171,6 +172,21 @@ pub fn vis_board_inner(
     }
 
     doc.to_string()
+}
+
+pub fn vis_gaming_boards_inner(
+    h: usize,
+    w: usize,
+    board: &Vec<Vec<Option<bool>>>,
+    hints: &(Vec<Vec<i32>>, Vec<Vec<i32>>),
+) -> String {
+    [
+        "#ff0000", "#ff7f00", "#ffff00", "#7fff00", "#00ff00", "#00ff7f", "#00ffff", "#007fff",
+        "#0000ff", "#7f00ff", "#ff00ff", "#ff007f",
+    ]
+    .iter()
+    .map(|&fill| vis_board_inner(h, w, board, hints, fill))
+    .join("$")
 }
 
 pub fn vis_cursor_inner(h: usize, w: usize, y: usize, x: usize) -> String {

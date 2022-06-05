@@ -35,6 +35,7 @@ let N = 5;
 let ans = (0, pkg_1.gen)(N, N, BigInt(0));
 let hints = get_hints(N, N, ans);
 let board = new Int32Array;
+let gamingBoardSvgs;
 let cursor = { x: 0, y: 0 };
 let pre = { x: -1, y: -1, ctrl: false, enter: false, undo: false };
 let pressEnter = false;
@@ -120,6 +121,20 @@ document.onkeydown = function (ev) {
     if (!cleared && correct) {
         showFoot();
         cleared = true;
+        if (isGamingMode.checked) {
+            gamingBoardSvgs = (0, pkg_1.vis_gaming_boards)(N, N, board, hints).split("$");
+            let t = 0;
+            function drawGaming() {
+                if (cleared) {
+                    document.getElementById("gyouza").innerHTML = gamingBoardSvgs[t];
+                    t += 1;
+                    if (t >= 12)
+                        t -= 12;
+                    requestAnimationFrame(drawGaming);
+                }
+            }
+            drawGaming();
+        }
     }
     else if (cleared && !correct) {
         hideFoot();
@@ -134,6 +149,8 @@ document.onkeyup = function (ev) {
 };
 const seedInput = document.getElementById("seed");
 const sizeSelect = document.getElementById("size");
+const isGamingMode = document.getElementById("gaming");
+const isHardMode = document.getElementById("hard");
 const nextButtton = document.getElementById("next");
 const savePngButton = document.getElementById("save_png");
 const saveGifButton = document.getElementById("save_gif");

@@ -40,7 +40,14 @@ pub fn vis_board(h: usize, w: usize, board: Vec<i32>, hints: Vec<i32>) -> String
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     let board = parse_board(h, w, &board);
     let hints = parse_hints(h, w, &hints);
-    vis_board_inner(h, w, &board, &hints)
+    vis_board_inner(h, w, &board, &hints, "black")
+}
+
+#[wasm_bindgen]
+pub fn vis_gaming_boards(h: usize, w: usize, board: Vec<i32>, hints: Vec<i32>) -> String {
+    let board = parse_board(h, w, &board);
+    let hints = parse_hints(h, w, &hints);
+    vis_gaming_boards_inner(h, w, &board, &hints)
 }
 
 #[wasm_bindgen]
