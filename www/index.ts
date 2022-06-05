@@ -39,6 +39,7 @@ let pressEnter = false;
 let undoHistory = new Array<[Int32Array, { x: number, y: number }]>();
 let redoHistory = new Array<[Int32Array, { x: number, y: number }]>();
 let cleared = false;
+let gameover = false;
 
 function isCorrect(board: Int32Array, ans: Int32Array) {
     for (let i = 0; i < N * N; i++) {
@@ -58,6 +59,8 @@ const FALSE = 0;
 const TRUE = 1;
 const NONE = 2;
 document.onkeydown = function (ev: KeyboardEvent) {
+    if (gameover) return;
+
     if (!cleared && ev.key == KEY_LEFT) {
         cursor.x = (cursor.x - 1 + N) % N;
         document.getElementById("sushi")!.innerHTML = vis_cursor(N, N, cursor.y, cursor.x);
@@ -94,6 +97,11 @@ document.onkeydown = function (ev: KeyboardEvent) {
             document.getElementById("gyouza")!.innerHTML = vis_board(N, N, board, hints);
             pressEnter = true;
             pre.enter = true;
+            if (isHardMode.checked && val !== undefined && ans[cursor.y * N + cursor.x] !== +val) {
+                gameover = true;
+                showGameover();
+                return;
+            }
         }
     }
 
@@ -135,7 +143,7 @@ document.onkeydown = function (ev: KeyboardEvent) {
             drawGaming();
         }
     } else if (cleared && !correct) {
-        hideFoot();
+        hideAll();
         cleared = false;
     }
 };
@@ -181,6 +189,7 @@ function newGame(seed: BigInt) {
     pre = { x: 0, y: 0, ctrl: false, enter: false, undo: false };
     pressEnter = false;
     cleared = false;
+    gameover = false;
     undoHistory = new Array<[Int32Array, { x: number, y: number }]>([board, { x: 0, y: 0 }]);
     redoHistory = new Array<[Int32Array, { x: number, y: number }]>();
 
@@ -188,18 +197,27 @@ function newGame(seed: BigInt) {
     document.getElementById("sushi")!.innerHTML = vis_cursor(N, N, 0, 0);
 }
 
-function hideFoot() {
+function hideAll() {
     document.getElementById("foot")!.style.visibility = 'hidden';
     document.getElementById("foot")!.style.position = 'relative';
-    document.getElementById("foot")!.style.top = `${N * 24 + 260}px`;
+    document.getElementById("foot")!.style.top = `${N * 24 + 160}px`;
+
     document.getElementById("commands")!.style.position = 'relative';
     document.getElementById("commands")!.style.top = `${N * 24 + 230}px`;
+
+    document.getElementById("gameover")!.style.visibility = 'hidden';
+    document.getElementById("gameover")!.style.position = 'relative';
+    document.getElementById("gameover")!.style.top = `${N * 24 + 70}px`;
 }
 
 function showFoot() {
     document.getElementById("foot")!.style.visibility = 'visible';
-    document.getElementById("foot")!.style.top = `${N * 24 + 160}px`;
     document.getElementById("commands")!.style.top = `${N * 24 + 340}px`;
+}
+
+function showGameover() {
+    document.getElementById("gameover")!.style.visibility = 'visible';
+    document.getElementById("commands")!.style.top = `${N * 24 + 270}px`;
 }
 
 function load() {
@@ -209,7 +227,7 @@ function load() {
     seedInput.value = seed;
     sizeSelect.options[N / 5 - 1].selected = true;
 
-    hideFoot();
+    hideAll();
     newGame(BigInt(seed));
 }
 load();

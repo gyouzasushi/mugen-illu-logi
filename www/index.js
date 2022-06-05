@@ -42,6 +42,7 @@ let pressEnter = false;
 let undoHistory = new Array();
 let redoHistory = new Array();
 let cleared = false;
+let gameover = false;
 function isCorrect(board, ans) {
     for (let i = 0; i < N * N; i++) {
         if (board[i] !== ans[i])
@@ -59,6 +60,8 @@ const FALSE = 0;
 const TRUE = 1;
 const NONE = 2;
 document.onkeydown = function (ev) {
+    if (gameover)
+        return;
     if (!cleared && ev.key == KEY_LEFT) {
         cursor.x = (cursor.x - 1 + N) % N;
         document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
@@ -95,6 +98,11 @@ document.onkeydown = function (ev) {
             document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints);
             pressEnter = true;
             pre.enter = true;
+            if (isHardMode.checked && val !== undefined && ans[cursor.y * N + cursor.x] !== +val) {
+                gameover = true;
+                showGameover();
+                return;
+            }
         }
     }
     if (ev.key == KEY_UNDO && ev.ctrlKey) {
@@ -137,7 +145,7 @@ document.onkeydown = function (ev) {
         }
     }
     else if (cleared && !correct) {
-        hideFoot();
+        hideAll();
         cleared = false;
     }
 };
@@ -175,22 +183,29 @@ function newGame(seed) {
     pre = { x: 0, y: 0, ctrl: false, enter: false, undo: false };
     pressEnter = false;
     cleared = false;
+    gameover = false;
     undoHistory = new Array([board, { x: 0, y: 0 }]);
     redoHistory = new Array();
     document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints);
     document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, 0, 0);
 }
-function hideFoot() {
+function hideAll() {
     document.getElementById("foot").style.visibility = 'hidden';
     document.getElementById("foot").style.position = 'relative';
-    document.getElementById("foot").style.top = `${N * 24 + 260}px`;
+    document.getElementById("foot").style.top = `${N * 24 + 160}px`;
     document.getElementById("commands").style.position = 'relative';
     document.getElementById("commands").style.top = `${N * 24 + 230}px`;
+    document.getElementById("gameover").style.visibility = 'hidden';
+    document.getElementById("gameover").style.position = 'relative';
+    document.getElementById("gameover").style.top = `${N * 24 + 70}px`;
 }
 function showFoot() {
     document.getElementById("foot").style.visibility = 'visible';
-    document.getElementById("foot").style.top = `${N * 24 + 160}px`;
     document.getElementById("commands").style.top = `${N * 24 + 340}px`;
+}
+function showGameover() {
+    document.getElementById("gameover").style.visibility = 'visible';
+    document.getElementById("commands").style.top = `${N * 24 + 270}px`;
 }
 function load() {
     const url = new URL(location.toString());
@@ -198,7 +213,7 @@ function load() {
     const seed = url.searchParams.get('seed') || (0, pkg_1.gen_seed)();
     seedInput.value = seed;
     sizeSelect.options[N / 5 - 1].selected = true;
-    hideFoot();
+    hideAll();
     newGame(BigInt(seed));
 }
 load();
