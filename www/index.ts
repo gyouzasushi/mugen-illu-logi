@@ -148,8 +148,6 @@ document.onkeydown = function (ev: KeyboardEvent) {
     }
 };
 
-
-
 document.onkeyup = function (ev: KeyboardEvent) {
     if (ev.key == 'Enter') {
         pressEnter = false;

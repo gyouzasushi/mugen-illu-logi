@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use rand::prelude::*;
+use std::cmp::Ordering;
 use std::fmt;
 
 pub type Hints = (Vec<Vec<usize>>, Vec<Vec<usize>>);
@@ -17,7 +18,6 @@ pub fn gen_inner(h: usize, w: usize, seed: u64) -> (Vec<bool>, Hints) {
 
         let mut solver = Solver::new(h, w, hints.clone());
         if solver.solve() && full_or_empty_line_doesnt_exist {
-            println!("{:?}", solver.board);
             break (solver.board.get_plain(), hints);
         }
     };
@@ -108,12 +108,48 @@ impl Solver {
         }
     }
     fn solve(&mut self) -> bool {
+        for _ in 0..2 {
+            for y in 0..self.board.h {
+                self.solve_line_initial(y);
+            }
+            self.board.transpose();
+            std::mem::swap(&mut self.hints.0, &mut self.hints.1);
+        }
         loop {
             let mut upd = false;
-            for _ in 0..2 {
-                for y in 0..self.board.h {
-                    upd |= self.solve_line(y);
+
+            let mut id = (0..self.board.h)
+                .map(|y| {
+                    (
+                        (0..self.board.w)
+                            .filter(|&x| self.board.get(y, x).is_none())
+                            .count(),
+                        y,
+                        false,
+                    )
+                })
+                .chain((0..self.board.w).map(|x| {
+                    (
+                        (0..self.board.h)
+                            .filter(|&y| self.board.get(y, x).is_none())
+                            .count(),
+                        x,
+                        true,
+                    )
+                }))
+                .collect_vec();
+            id.sort_unstable();
+
+            let mut transposed = false;
+            for (_, y, now_transposed) in id {
+                if transposed != now_transposed {
+                    self.board.transpose();
+                    std::mem::swap(&mut self.hints.0, &mut self.hints.1);
                 }
+                upd |= self.solve_line(y);
+                transposed = now_transposed;
+            }
+            if transposed {
                 self.board.transpose();
                 std::mem::swap(&mut self.hints.0, &mut self.hints.1);
             }
@@ -123,48 +159,187 @@ impl Solver {
         }
         self.board.grid.iter().all(|&f| f.is_some())
     }
-    fn solve_line(&mut self, y: usize) -> bool {
-        let empty_indice = (0..self.board.w)
-            .filter(|&x| self.board.get(y, x).is_none())
-            .collect::<Vec<_>>();
-        let need: usize = self.hints.0[y].iter().sum::<usize>()
-            - (0..self.board.w)
-                .filter(|&x| self.board.get(y, x) == Some(true))
-                .count();
-        let mut can_be_true = vec![false; self.board.w];
-        let mut can_be_false = vec![false; self.board.w];
-        for true_indice in empty_indice.iter().combinations(need) {
-            for &x in &empty_indice {
-                self.board.set(y, x, Some(false));
+    fn solve_line_initial(&mut self, y: usize) {
+        let mut l_sum = 0_usize;
+        let mut r_sum = self.hints.0[y].iter().sum::<usize>();
+        let n = self.hints.0[y].len();
+        for (i, &hint) in self.hints.0[y].iter().enumerate() {
+            r_sum -= hint;
+            let l0 = l_sum + i;
+            let r0 = l0 + hint - 1;
+            let r1 = self.board.w - 1 - (r_sum + (n - 1 - i));
+            let l1 = r1 - (hint - 1);
+            if l1 > r0 {
+                continue;
             }
-            for &&x in &true_indice {
+            for x in l1..=r0 {
                 self.board.set(y, x, Some(true));
             }
-            if self.board.compress(y) == self.hints.0[y] {
+            l_sum += hint;
+        }
+    }
+
+    fn solve_line(&mut self, y: usize) -> bool {
+        let mut upd = false;
+        // 未確定マスの埋め方を全探索
+        if (0..self.board.w)
+            .filter(|&x| self.board.get(y, x).is_none())
+            .count()
+            <= 15
+        {
+            let empty_indice = (0..self.board.w)
+                .filter(|&x| self.board.get(y, x).is_none())
+                .collect::<Vec<_>>();
+            let need: usize = self.hints.0[y].iter().sum::<usize>()
+                - (0..self.board.w)
+                    .filter(|&x| self.board.get(y, x) == Some(true))
+                    .count();
+            let mut can_be_true = vec![false; self.board.w];
+            let mut can_be_false = vec![false; self.board.w];
+            for true_indice in empty_indice.iter().combinations(need) {
                 for &x in &empty_indice {
-                    match self.board.get(y, x) {
-                        Some(true) => can_be_true[x] = true,
-                        Some(false) => can_be_false[x] = true,
-                        None => unreachable!(),
+                    self.board.set(y, x, Some(false));
+                }
+                for &&x in &true_indice {
+                    self.board.set(y, x, Some(true));
+                }
+                if self.board.compress(y) == self.hints.0[y] {
+                    for &x in &empty_indice {
+                        match self.board.get(y, x) {
+                            Some(true) => can_be_true[x] = true,
+                            Some(false) => can_be_false[x] = true,
+                            None => unreachable!(),
+                        }
                     }
+                }
+                for &x in &empty_indice {
+                    self.board.set(y, x, None);
                 }
             }
             for &x in &empty_indice {
-                self.board.set(y, x, None);
+                if can_be_true[x] && !can_be_false[x] {
+                    self.board.set(y, x, Some(true));
+                    upd = true;
+                }
+                if !can_be_true[x] && can_be_false[x] {
+                    self.board.set(y, x, Some(false));
+                    upd = true;
+                }
             }
         }
 
-        let mut upd = false;
-        for &x in &empty_indice {
-            if can_be_true[x] && !can_be_false[x] {
-                self.board.set(y, x, Some(true));
-                upd = true;
+        // 前から見て確定するマスを埋めていく
+        let mut x = 0;
+        let mut i = 0;
+        while x < self.board.w && i < self.hints.0[y].len() {
+            let mut nx = x;
+            while nx < self.board.w
+                && (self.board.get(y, x) == Some(false)) == (self.board.get(y, nx) == Some(false))
+            {
+                nx += 1;
             }
-            if !can_be_true[x] && can_be_false[x] {
-                self.board.set(y, x, Some(false));
-                upd = true;
+            let len = nx - x;
+            match self.board.get(y, x) {
+                Some(true) | None => match len.cmp(&self.hints.0[y][i]) {
+                    Ordering::Equal => {
+                        if (x..nx).any(|x| self.board.get(y, x) == Some(true)) {
+                            for x in x..nx {
+                                if self.board.get(y, x).is_none() {
+                                    upd = true;
+                                    self.board.set(y, x, Some(true));
+                                }
+                            }
+                            i += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    Ordering::Greater => {
+                        nx = x + self.hints.0[y][i];
+                        if self.board.get(y, x) == Some(true) {
+                            for x in x..nx {
+                                if self.board.get(y, x).is_none() {
+                                    upd = true;
+                                    self.board.set(y, x, Some(true));
+                                }
+                            }
+                            i += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    Ordering::Less => {
+                        assert!((x..nx).all(|x| self.board.get(y, x) != Some(true)));
+                        for x in x..nx {
+                            if self.board.get(y, x).is_none() {
+                                upd = true;
+                                self.board.set(y, x, Some(false));
+                            }
+                        }
+                    }
+                },
+                Some(false) => {}
             }
+            x = nx;
         }
+
+        // 後ろから見て確定するマスを埋めていく
+        let mut x = self.board.w - 1;
+        let mut i = self.hints.0[y].len() - 1;
+        while x < self.board.w && i < self.hints.0[y].len() {
+            let mut nx = x;
+            while nx < self.board.w
+                && (self.board.get(y, x) == Some(false)) == (self.board.get(y, nx) == Some(false))
+            {
+                nx = nx.wrapping_sub(1);
+            }
+            let len = x.wrapping_sub(nx);
+            match self.board.get(y, x) {
+                Some(true) | None => match len.cmp(&self.hints.0[y][i]) {
+                    Ordering::Equal => {
+                        if (nx.wrapping_add(1)..=x).any(|x| self.board.get(y, x) == Some(true)) {
+                            for x in nx.wrapping_add(1)..=x {
+                                if self.board.get(y, x).is_none() {
+                                    upd = true;
+                                    self.board.set(y, x, Some(true));
+                                }
+                            }
+                            i = i.wrapping_sub(1);
+                        } else {
+                            break;
+                        }
+                    }
+                    Ordering::Greater => {
+                        nx = x.wrapping_sub(self.hints.0[y][i]);
+                        if self.board.get(y, x) == Some(true) {
+                            for x in x..nx {
+                                if self.board.get(y, x).is_none() {
+                                    upd = true;
+                                    self.board.set(y, x, Some(true));
+                                }
+                            }
+                            i = i.wrapping_sub(1);
+                        } else {
+                            break;
+                        }
+                    }
+                    Ordering::Less => {
+                        assert!(
+                            (nx.wrapping_add(1)..=x).all(|x| self.board.get(y, x) != Some(true))
+                        );
+                        for x in nx.wrapping_add(1)..=x {
+                            if self.board.get(y, x).is_none() {
+                                upd = true;
+                                self.board.set(y, x, Some(false));
+                            }
+                        }
+                    }
+                },
+                Some(false) => {}
+            }
+            x = nx;
+        }
+
         upd
     }
 }
@@ -173,6 +348,8 @@ impl Solver {
 mod test {
     use super::*;
     use itertools::Itertools;
+    use std::time::{Duration, Instant};
+
     #[test]
     fn test_transpose() {
         let mut board = Board::new(2, 3, vec![None; 6]);
