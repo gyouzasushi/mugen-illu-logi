@@ -43,6 +43,7 @@ let undoHistory = new Array();
 let redoHistory = new Array();
 let cleared = false;
 let gameover = false;
+let val = null;
 function isCorrect(board, ans) {
     for (let i = 0; i < N * N; i++) {
         if (board[i] !== ans[i])
@@ -89,11 +90,12 @@ document.onkeydown = function (ev) {
         if (!pre.enter || pre.ctrl !== ev.ctrlKey) {
             if (!pre.undo)
                 redoHistory = [];
-            undoHistory.push([board, { x: pre.x, y: pre.y }]);
+            undoHistory.push([board, { x: cursor.x, y: cursor.y }]);
             pre.x = cursor.x, pre.y = cursor.y, pre.ctrl = ev.ctrlKey, pre.undo = false;
-            const val = !ev.ctrlKey && board[cursor.y * N + cursor.x] !== TRUE ? true
-                : ev.ctrlKey && board[cursor.y * N + cursor.x] !== FALSE ? false
-                    : undefined;
+            if (val === null)
+                val = !ev.ctrlKey && board[cursor.y * N + cursor.x] !== TRUE ? true
+                    : ev.ctrlKey && board[cursor.y * N + cursor.x] !== FALSE ? false
+                        : undefined;
             board = (0, pkg_1.set)(cursor.y, cursor.x, val, N, N, board, hints);
             document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints);
             pressEnter = true;
@@ -153,6 +155,7 @@ document.onkeyup = function (ev) {
     if (ev.key == 'Enter') {
         pressEnter = false;
         pre.x = cursor.x, pre.y = cursor.y, pre.ctrl = false, pre.enter = false;
+        val = null;
     }
 };
 const seedInput = document.getElementById("seed");
@@ -164,6 +167,8 @@ const nextButtton = document.getElementById("next");
 const savePngButton = document.getElementById("save_png");
 const saveGifButton = document.getElementById("save_gif");
 const shareButton = document.getElementById("share");
+const nextHardButton = document.getElementById("next_hard");
+const retryButton = document.getElementById("retry");
 seedInput.onchange = function () {
     const seed = seedInput.value;
     const url = new URL(location.toString());
@@ -258,7 +263,17 @@ nextButtton.onclick = function () {
     const url = new URL(location.toString());
     url.searchParams.set('seed', seed);
     location.href = url.toString();
-    console.log(url.toString());
+};
+nextHardButton.onclick = function () {
+    const seed = (0, pkg_1.gen_seed)();
+    const url = new URL(location.toString());
+    url.searchParams.set('seed', seed);
+    location.href = url.toString();
+};
+retryButton.onclick = function () {
+    const seed = seedInput.value;
+    hideAll();
+    newGame(BigInt(seed));
 };
 savePngButton.onclick = function () {
     const svgData = (0, pkg_1.vis_grid)(N, N, 15, board);

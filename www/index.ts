@@ -40,6 +40,7 @@ let undoHistory = new Array<[Int32Array, { x: number, y: number }]>();
 let redoHistory = new Array<[Int32Array, { x: number, y: number }]>();
 let cleared = false;
 let gameover = false;
+let val: boolean | undefined | null = null;
 
 function isCorrect(board: Int32Array, ans: Int32Array) {
     for (let i = 0; i < N * N; i++) {
@@ -88,9 +89,9 @@ document.onkeydown = function (ev: KeyboardEvent) {
     if (!cleared && pressEnter) {
         if (!pre.enter || pre.ctrl !== ev.ctrlKey) {
             if (!pre.undo) redoHistory = [];
-            undoHistory.push([board, { x: pre.x, y: pre.y }]);
+            undoHistory.push([board, { x: cursor.x, y: cursor.y }]);
             pre.x = cursor.x, pre.y = cursor.y, pre.ctrl = ev.ctrlKey, pre.undo = false;
-            const val = !ev.ctrlKey && board[cursor.y * N + cursor.x] !== TRUE ? true
+            if (val === null) val = !ev.ctrlKey && board[cursor.y * N + cursor.x] !== TRUE ? true
                 : ev.ctrlKey && board[cursor.y * N + cursor.x] !== FALSE ? false
                     : undefined;
             board = set(cursor.y, cursor.x, val, N, N, board, hints);
@@ -152,6 +153,7 @@ document.onkeyup = function (ev: KeyboardEvent) {
     if (ev.key == 'Enter') {
         pressEnter = false;
         pre.x = cursor.x, pre.y = cursor.y, pre.ctrl = false, pre.enter = false;
+        val = null;
     }
 }
 
@@ -166,6 +168,8 @@ const nextButtton = document.getElementById("next")!;
 const savePngButton = document.getElementById("save_png")!;
 const saveGifButton = <HTMLButtonElement>document.getElementById("save_gif")!;
 const shareButton = document.getElementById("share")!;
+const nextHardButton = <HTMLButtonElement>document.getElementById("next_hard")!;
+const retryButton = <HTMLButtonElement>document.getElementById("retry")!;
 
 seedInput.onchange = function () {
     const seed = seedInput.value;
@@ -269,7 +273,17 @@ nextButtton.onclick = function () {
     const url = new URL(location.toString());
     url.searchParams.set('seed', seed);
     location.href = url.toString();
-    console.log(url.toString());
+}
+nextHardButton.onclick = function () {
+    const seed = gen_seed();
+    const url = new URL(location.toString());
+    url.searchParams.set('seed', seed);
+    location.href = url.toString();
+}
+retryButton.onclick = function () {
+    const seed = seedInput.value;
+    hideAll();
+    newGame(BigInt(seed));
 }
 savePngButton.onclick = function () {
     const svgData = vis_grid(N, N, 15, board);
