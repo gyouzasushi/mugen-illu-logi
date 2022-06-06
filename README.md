@@ -7,4 +7,5 @@
 - undo：ctrl + z
 - redo：ctrl + y
 ## その他
-- Save as Animation gif ← 1 分ぐらいかかるかもしれません
+- N = 20 ← 生成に数秒かかるかもしれません
+- Save as Animation gif ← 1, 2 分ぐらいかかるかもしれません
