@@ -8,4 +8,4 @@
 - redo：ctrl + y
 ## その他
 - N = 20 ← 生成に数秒かかるかもしれません
-- Save as Animation gif ← 1, 2 分ぐらいかかるかもしれません
+- Save as Animation gif ← ~1, 2 分ぐらいかかるかもしれません~ 爆速になりました！！！！！
