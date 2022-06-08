@@ -55,11 +55,14 @@
 /******/ 		"../pkg/illu_logi_bg.wasm": function() {
 /******/ 			return {
 /******/ 				"./illu_logi_bg.js": {
-/******/ 					"__wbg_getRandomValues_fb6b088efb6bead2": function(p0i32,p1i32) {
-/******/ 						return installedModules["../pkg/illu_logi_bg.js"].exports["__wbg_getRandomValues_fb6b088efb6bead2"](p0i32,p1i32);
-/******/ 					},
 /******/ 					"__wbg_randomFillSync_654a7797990fb8db": function(p0i32,p1i32,p2i32) {
 /******/ 						return installedModules["../pkg/illu_logi_bg.js"].exports["__wbg_randomFillSync_654a7797990fb8db"](p0i32,p1i32,p2i32);
+/******/ 					},
+/******/ 					"__wbindgen_object_drop_ref": function(p0i32) {
+/******/ 						return installedModules["../pkg/illu_logi_bg.js"].exports["__wbindgen_object_drop_ref"](p0i32);
+/******/ 					},
+/******/ 					"__wbg_getRandomValues_fb6b088efb6bead2": function(p0i32,p1i32) {
+/******/ 						return installedModules["../pkg/illu_logi_bg.js"].exports["__wbg_getRandomValues_fb6b088efb6bead2"](p0i32,p1i32);
 /******/ 					},
 /******/ 					"__wbg_process_70251ed1291754d5": function(p0i32) {
 /******/ 						return installedModules["../pkg/illu_logi_bg.js"].exports["__wbg_process_70251ed1291754d5"](p0i32);
@@ -75,9 +78,6 @@
 /******/ 					},
 /******/ 					"__wbindgen_is_string": function(p0i32) {
 /******/ 						return installedModules["../pkg/illu_logi_bg.js"].exports["__wbindgen_is_string"](p0i32);
-/******/ 					},
-/******/ 					"__wbindgen_object_drop_ref": function(p0i32) {
-/******/ 						return installedModules["../pkg/illu_logi_bg.js"].exports["__wbindgen_object_drop_ref"](p0i32);
 /******/ 					},
 /******/ 					"__wbg_static_accessor_NODE_MODULE_33b45247c55045b0": function() {
 /******/ 						return installedModules["../pkg/illu_logi_bg.js"].exports["__wbg_static_accessor_NODE_MODULE_33b45247c55045b0"]();
@@ -249,7 +249,7 @@
 /******/ 				promises.push(installedWasmModuleData);
 /******/ 			else {
 /******/ 				var importObject = wasmImportObjects[wasmModuleId]();
-/******/ 				var req = fetch(__webpack_require__.p + "" + {"../pkg/illu_logi_bg.wasm":"8d3ffdded5825ca5a676"}[wasmModuleId] + ".module.wasm");
+/******/ 				var req = fetch(__webpack_require__.p + "" + {"../pkg/illu_logi_bg.wasm":"3b7330c2a35afc52abeb"}[wasmModuleId] + ".module.wasm");
 /******/ 				var promise;
 /******/ 				if(importObject instanceof Promise && typeof WebAssembly.compileStreaming === 'function') {
 /******/ 					promise = Promise.all([WebAssembly.compileStreaming(req), importObject]).then(function(items) {
