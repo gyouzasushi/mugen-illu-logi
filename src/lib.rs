@@ -26,28 +26,42 @@ pub fn vis_grid(h: usize, w: usize, d: i32, board: Vec<i32>) -> String {
 }
 
 #[wasm_bindgen]
-pub fn vis_gif(h: usize, w: usize, d: i32, boards: Vec<i32>, max_turn: usize) -> String {
+pub fn vis_gif(h: usize, w: usize, d: u16, boards: Vec<i32>, max_turn: usize) -> Vec<u8> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     assert_eq!(max_turn * h * w, boards.len());
     let boards = (0..max_turn)
-        .map(|t| parse_board(h, w, &boards[t * h * w..(t + 1) * h * w]))
+        .map(|t| parse_board_unwrap(h, w, &boards[t * h * w..(t + 1) * h * w]))
         .collect_vec();
     vis_gif_inner(h, w, d, &boards)
 }
 
 #[wasm_bindgen]
-pub fn vis_board(h: usize, w: usize, board: Vec<i32>, hints: Vec<i32>) -> String {
+pub fn vis_board(
+    h: usize,
+    w: usize,
+    board: Vec<i32>,
+    hints: Vec<i32>,
+    offset_y: i32,
+    offset_x: i32,
+) -> String {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     let board = parse_board(h, w, &board);
     let hints = parse_hints(h, w, &hints);
-    vis_board_inner(h, w, &board, &hints, "black")
+    vis_board_inner(h, w, &board, &hints, "black", offset_y, offset_x)
 }
 
 #[wasm_bindgen]
-pub fn vis_gaming_boards(h: usize, w: usize, board: Vec<i32>, hints: Vec<i32>) -> String {
+pub fn vis_gaming_boards(
+    h: usize,
+    w: usize,
+    board: Vec<i32>,
+    hints: Vec<i32>,
+    offset_y: i32,
+    offset_x: i32,
+) -> String {
     let board = parse_board(h, w, &board);
     let hints = parse_hints(h, w, &hints);
-    vis_gaming_boards_inner(h, w, &board, &hints)
+    vis_gaming_boards_inner(h, w, &board, &hints, offset_y, offset_x)
 }
 
 #[wasm_bindgen]
@@ -75,8 +89,8 @@ pub fn set(
 }
 
 #[wasm_bindgen]
-pub fn vis_cursor(h: usize, w: usize, y: usize, x: usize) -> String {
-    vis_cursor_inner(h, w, y, x)
+pub fn vis_cursor(h: usize, w: usize, y: usize, x: usize, offset_y: i32, offset_x: i32) -> String {
+    vis_cursor_inner(h, w, y, x, offset_y, offset_x)
 }
 
 fn parse_board(h: usize, w: usize, board: &[i32]) -> Vec<Vec<Option<bool>>> {
@@ -86,8 +100,21 @@ fn parse_board(h: usize, w: usize, board: &[i32]) -> Vec<Vec<Option<bool>>> {
                 .map(|x| match board[y * w + x] {
                     0 => Some(false),
                     1 => Some(true),
-                    _ => None,
-                    //_ => unreachable!(),
+                    2 => None,
+                    _ => unreachable!(),
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
+}
+fn parse_board_unwrap(h: usize, w: usize, board: &[i32]) -> Vec<Vec<bool>> {
+    (0..h)
+        .map(|y| {
+            (0..w)
+                .map(|x| match board[y * w + x] {
+                    0 | 2 => false,
+                    1 => true,
+                    _ => unreachable!(),
                 })
                 .collect::<Vec<_>>()
         })

@@ -1,11 +1,10 @@
+use gif::Gif;
 use itertools::Itertools;
 use svg::node::element::path::Data;
 use svg::node::element::{Path, Rectangle, Text};
 use svg::Document;
 
 const D: i32 = 24;
-const OFFSET_X: i32 = 200;
-const OFFSET_Y: i32 = 200;
 const THEME: &str = "#7BC96F";
 
 pub fn vis_grid_inner(h: usize, w: usize, d: i32, board: &Vec<Vec<Option<bool>>>) -> String {
@@ -38,11 +37,13 @@ pub fn vis_grid_inner(h: usize, w: usize, d: i32, board: &Vec<Vec<Option<bool>>>
     doc.to_string()
 }
 
-pub fn vis_gif_inner(h: usize, w: usize, d: i32, boards: &Vec<Vec<Vec<Option<bool>>>>) -> String {
-    boards
-        .iter()
-        .map(|board| vis_grid_inner(h, w, d, board))
-        .join("$")
+pub fn vis_gif_inner(h: usize, w: usize, d: u16, boards: &[Vec<Vec<bool>>]) -> Vec<u8> {
+    let mut gif = Gif::new(h as u16 * d, w as u16 * d);
+    for (i, board) in boards.iter().enumerate() {
+        let delay = if i == boards.len() - 1 { 200 } else { 20 };
+        gif.add(board, delay).unwrap();
+    }
+    gif.buffer
 }
 
 pub fn vis_board_inner(
@@ -51,6 +52,8 @@ pub fn vis_board_inner(
     board: &Vec<Vec<Option<bool>>>,
     hints: &(Vec<Vec<i32>>, Vec<Vec<i32>>),
     fill: &str,
+    offset_y: i32,
+    offset_x: i32,
 ) -> String {
     let hints_hidden = get_hints_hidden(board, hints);
 
@@ -61,12 +64,12 @@ pub fn vis_board_inner(
             (
                 -5,
                 -5,
-                D * w as i32 + OFFSET_X + 10,
-                D * h as i32 + OFFSET_Y + 10,
+                D * w as i32 + offset_x + 10,
+                D * h as i32 + offset_y + 10,
             ),
         )
-        .set("width", D * w as i32 + OFFSET_X + 10)
-        .set("height", D * h as i32 + OFFSET_Y + 10);
+        .set("width", D * w as i32 + offset_x + 10)
+        .set("height", D * h as i32 + offset_y + 10);
 
     // grids
     for y in 0..h {
@@ -81,8 +84,8 @@ pub fn vis_board_inner(
                             "white"
                         },
                     )
-                    .set("x", x as i32 * D + OFFSET_X)
-                    .set("y", y as i32 * D + OFFSET_Y)
+                    .set("x", x as i32 * D + offset_x)
+                    .set("y", y as i32 * D + offset_y)
                     .set("width", D)
                     .set("height", D)
                     .set("stroke", "black")
@@ -103,7 +106,7 @@ pub fn vis_board_inner(
                         .set(
                             "d",
                             Data::new()
-                                .move_to((x as i32 * D + OFFSET_X, y as i32 * D + OFFSET_Y))
+                                .move_to((x as i32 * D + offset_x, y as i32 * D + offset_y))
                                 .line_by((D, D))
                                 .move_by((0, -D))
                                 .line_by((-D, D)),
@@ -119,8 +122,8 @@ pub fn vis_board_inner(
             doc = doc.add(
                 Rectangle::new()
                     .set("fill-opacity", 0)
-                    .set("x", x as i32 * D + OFFSET_X)
-                    .set("y", y as i32 * D + OFFSET_Y)
+                    .set("x", x as i32 * D + offset_x)
+                    .set("y", y as i32 * D + offset_y)
                     .set("width", D * 5)
                     .set("height", D * 5)
                     .set("stroke", "black")
@@ -132,10 +135,14 @@ pub fn vis_board_inner(
     // hints
     for (y, hints) in hints.0.iter().enumerate() {
         for (x, num) in hints.iter().enumerate() {
+            let dx = if *num >= 10 { D / 4 } else { 0 };
             doc = doc.add(
                 Text::new()
-                    .set("x", OFFSET_X - D * (hints.len() - 1 - x) as i32 - D / 2)
-                    .set("y", OFFSET_Y + D * y as i32 + D / 2)
+                    .set(
+                        "x",
+                        offset_x - D * (hints.len() - 1 - x) as i32 - D / 2 + dx,
+                    )
+                    .set("y", offset_y + D * y as i32 + D / 2)
                     .set(
                         "fill",
                         if hints_hidden.0[y][x] {
@@ -155,8 +162,8 @@ pub fn vis_board_inner(
         for (y, num) in hints.iter().enumerate() {
             doc = doc.add(
                 Text::new()
-                    .set("x", OFFSET_X + D * x as i32 + D / 2)
-                    .set("y", OFFSET_Y - D * (hints.len() - 1 - y) as i32 - D / 2)
+                    .set("x", offset_x + D * x as i32 + D / 2)
+                    .set("y", offset_y - D * (hints.len() - 1 - y) as i32 - D / 2)
                     .set(
                         "fill",
                         if hints_hidden.1[x][y] {
@@ -179,17 +186,26 @@ pub fn vis_gaming_boards_inner(
     w: usize,
     board: &Vec<Vec<Option<bool>>>,
     hints: &(Vec<Vec<i32>>, Vec<Vec<i32>>),
+    offset_y: i32,
+    offset_x: i32,
 ) -> String {
     [
         "#ff0000", "#ff7f00", "#ffff00", "#7fff00", "#00ff00", "#00ff7f", "#00ffff", "#007fff",
         "#0000ff", "#7f00ff", "#ff00ff", "#ff007f",
     ]
     .iter()
-    .map(|&fill| vis_board_inner(h, w, board, hints, fill))
+    .map(|&fill| vis_board_inner(h, w, board, hints, fill, offset_y, offset_x))
     .join("$")
 }
 
-pub fn vis_cursor_inner(h: usize, w: usize, y: usize, x: usize) -> String {
+pub fn vis_cursor_inner(
+    h: usize,
+    w: usize,
+    y: usize,
+    x: usize,
+    offset_y: i32,
+    offset_x: i32,
+) -> String {
     let mut doc = Document::new()
         .set("id", "vis")
         .set(
@@ -197,18 +213,18 @@ pub fn vis_cursor_inner(h: usize, w: usize, y: usize, x: usize) -> String {
             (
                 -5,
                 -5,
-                D * w as i32 + OFFSET_X + 10,
-                D * h as i32 + OFFSET_Y + 10,
+                D * w as i32 + offset_x + 10,
+                D * h as i32 + offset_y + 10,
             ),
         )
-        .set("width", D * w as i32 + OFFSET_X + 10)
-        .set("height", D * h as i32 + OFFSET_Y + 10);
+        .set("width", D * w as i32 + offset_x + 10)
+        .set("height", D * h as i32 + offset_y + 10);
 
     // cursor
     doc = doc.add(
         Rectangle::new()
-            .set("x", x as i32 * D + OFFSET_X)
-            .set("y", y as i32 * D + OFFSET_Y)
+            .set("x", x as i32 * D + offset_x)
+            .set("y", y as i32 * D + offset_y)
             .set("width", D)
             .set("height", D)
             .set("fill-opacity", 0)
@@ -220,8 +236,8 @@ pub fn vis_cursor_inner(h: usize, w: usize, y: usize, x: usize) -> String {
     doc = doc.add(
         Rectangle::new()
             .set("x", 0)
-            .set("y", D * y as i32 + OFFSET_Y)
-            .set("width", D * w as i32 + OFFSET_X)
+            .set("y", D * y as i32 + offset_y)
+            .set("width", D * w as i32 + offset_x)
             .set("height", D)
             .set("fill", THEME)
             .set("fill-opacity", 0.2)
@@ -230,10 +246,10 @@ pub fn vis_cursor_inner(h: usize, w: usize, y: usize, x: usize) -> String {
     );
     doc = doc.add(
         Rectangle::new()
-            .set("x", D * x as i32 + OFFSET_X)
+            .set("x", D * x as i32 + offset_x)
             .set("y", 0)
             .set("width", D)
-            .set("height", D * h as i32 + OFFSET_X)
+            .set("height", D * h as i32 + offset_x)
             .set("fill", THEME)
             .set("fill-opacity", 0.2)
             .set("stroke", THEME)
@@ -650,6 +666,114 @@ fn get_hints_hidden(
     }
 
     hints_hidden
+}
+
+mod gif {
+    use weezl::{encode::Encoder, BitOrder, LzwError};
+    pub struct Gif {
+        width: u16,
+        height: u16,
+        pub buffer: Vec<u8>,
+    }
+    impl Gif {
+        pub fn new(width: u16, height: u16) -> Self {
+            let width_upper = (width >> 8) as u8;
+            let width_lower = (width % (1 << 8)) as u8;
+            let height_upper = (height >> 8) as u8;
+            let height_lower = (height % (1 << 8)) as u8;
+            let header = [
+                0x47,
+                0x49,
+                0x46,
+                0x38,
+                0x39,
+                0x61,
+                width_lower,
+                width_upper,
+                height_lower,
+                height_upper,
+                0x80,
+                0x00,
+                0x00,
+                0xff,
+                0xff,
+                0xff,
+                0x00,
+                0x00,
+                0x00,
+            ];
+
+            let application_extention = [
+                0x21, 0xff, 0x0b, 0x4e, 0x45, 0x54, 0x53, 0x43, 0x41, 0x50, 0x45, 0x32, 0x2e, 0x30,
+                0x03, 0x01, 0x00, 0x00, 0x00,
+            ];
+
+            let trailer = [0x3b];
+
+            let mut buffer = Vec::<u8>::new();
+            buffer.extend_from_slice(&header);
+            buffer.extend_from_slice(&application_extention);
+            buffer.extend_from_slice(&trailer);
+            Self {
+                width,
+                height,
+                buffer,
+            }
+        }
+
+        pub fn add(&mut self, data: &[Vec<bool>], delay: u16) -> Result<(), LzwError> {
+            let (h, w) = (data.len(), data[0].len());
+            let size_h = self.height as usize / h;
+            let size_w = self.height as usize / w;
+            let data = (0..self.height as usize)
+                .map(|y| (0..self.width as usize).map(move |x| data[y / size_h][x / size_w] as u8))
+                .flatten()
+                .collect::<Vec<_>>();
+            self.add_inner(&data, delay)?;
+            Ok(())
+        }
+
+        fn add_inner(&mut self, data: &[u8], delay: u16) -> Result<(), LzwError> {
+            let trailer = self.buffer.pop().unwrap();
+
+            let delay_upper = (delay >> 8) as u8;
+            let delay_lower = (delay % (1 << 8)) as u8;
+            let graphic_control_extention =
+                [0x21, 0xf9, 0x04, 0x04, delay_lower, delay_upper, 0x00, 0x00];
+            self.buffer.extend_from_slice(&graphic_control_extention);
+
+            let width_upper = (self.width >> 8) as u8;
+            let width_lower = (self.width % (1 << 8)) as u8;
+            let height_upper = (self.height >> 8) as u8;
+            let height_lower = (self.height % (1 << 8)) as u8;
+            let mut image_block = Vec::<u8>::new();
+            image_block.extend_from_slice(&[
+                0x2c,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                width_lower,
+                width_upper,
+                height_lower,
+                height_upper,
+                0x00,
+                0x02,
+            ]);
+            let buffer = Encoder::new(BitOrder::Lsb, 2).encode(data)?;
+            let max_size = 0xff;
+            for l in (0..buffer.len()).step_by(max_size) {
+                let r = (l + max_size).min(buffer.len());
+                let block_size = (r - l) as u8;
+                image_block.push(block_size);
+                image_block.extend_from_slice(&buffer[l..r]);
+            }
+            image_block.push(0x00);
+            self.buffer.append(&mut image_block);
+            self.buffer.push(trailer);
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]

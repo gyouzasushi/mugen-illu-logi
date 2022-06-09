@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const pkg_1 = require("../pkg");
 function get_hints(h, w, board) {
     const hints = new Array();
+    let max_hints_width = 0;
+    let max_hints_height = 0;
     for (let y = 0; y < h; y++) {
         const line = Array();
         for (let x = 0; x < w;) {
@@ -13,6 +15,7 @@ function get_hints(h, w, board) {
                 line.push(nx - x);
             x = nx;
         }
+        max_hints_width = Math.max(max_hints_width, line.length);
         hints.push(line.length);
         hints.push.apply(hints, line);
     }
@@ -26,14 +29,17 @@ function get_hints(h, w, board) {
                 line.push(ny - y);
             y = ny;
         }
+        max_hints_height = Math.max(max_hints_height, line.length);
         hints.push(line.length);
         hints.push.apply(hints, line);
     }
-    return new Int32Array(hints);
+    const offset_y = Math.max(max_hints_height * 20, 160) + 40;
+    const offset_x = Math.max(max_hints_width * 20, 160) + 40;
+    return [new Int32Array(hints), offset_y, offset_x];
 }
 let N = 5;
 let ans = (0, pkg_1.gen)(N, N, BigInt(0));
-let hints = get_hints(N, N, ans);
+let [hints, offset_y, offset_x] = get_hints(N, N, ans);
 let board = new Int32Array;
 let gamingBoardSvgs;
 let cursor = { x: 0, y: 0 };
@@ -65,22 +71,22 @@ document.onkeydown = function (ev) {
         return;
     if (!cleared && ev.key == KEY_LEFT) {
         cursor.x = (cursor.x - 1 + N) % N;
-        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
+        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x, offset_y, offset_x);
         pre.enter = false;
     }
     if (!cleared && ev.key == KEY_RIGHT) {
         cursor.x = (cursor.x + 1 + N) % N;
-        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
+        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x, offset_y, offset_x);
         pre.enter = false;
     }
     if (!cleared && ev.key == KEY_UP) {
         cursor.y = (cursor.y - 1 + N) % N;
-        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
+        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x, offset_y, offset_x);
         pre.enter = false;
     }
     if (!cleared && ev.key == KEY_DOWN) {
         cursor.y = (cursor.y + 1 + N) % N;
-        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
+        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x, offset_y, offset_x);
         pre.enter = false;
     }
     if (!cleared && ev.key == 'Enter') {
@@ -97,7 +103,7 @@ document.onkeydown = function (ev) {
                     : ev.ctrlKey && board[cursor.y * N + cursor.x] !== FALSE ? false
                         : undefined;
             board = (0, pkg_1.set)(cursor.y, cursor.x, val, N, N, board, hints);
-            document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints);
+            document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints, offset_y, offset_x);
             pressEnter = true;
             pre.enter = true;
             if (isHardMode.checked && val !== undefined && ans[cursor.y * N + cursor.x] !== +val) {
@@ -114,8 +120,8 @@ document.onkeydown = function (ev) {
             redoHistory = [];
         redoHistory.push([board, cursor]);
         [board, cursor] = undoHistory.pop();
-        document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints);
-        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
+        document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints, offset_y, offset_x);
+        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x, offset_y, offset_x);
         pre.x = cursor.x, pre.y = cursor.y, pre.ctrl = false, pre.undo = true;
     }
     if (ev.key == KEY_REDO && ev.ctrlKey) {
@@ -123,8 +129,8 @@ document.onkeydown = function (ev) {
             return;
         undoHistory.push([board, cursor]);
         [board, cursor] = redoHistory.pop();
-        document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints);
-        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x);
+        document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints, offset_y, offset_x);
+        document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x, offset_y, offset_x);
         pre.x = cursor.x, pre.y = cursor.y, pre.ctrl = false, pre.undo = false;
     }
     const correct = isCorrect(board, ans);
@@ -132,7 +138,7 @@ document.onkeydown = function (ev) {
         showFoot();
         cleared = true;
         if (isGamingMode.checked) {
-            gamingBoardSvgs = (0, pkg_1.vis_gaming_boards)(N, N, board, hints).split("$");
+            gamingBoardSvgs = (0, pkg_1.vis_gaming_boards)(N, N, board, hints, offset_y, offset_x).split("$");
             let t = 0;
             function drawGaming() {
                 if (cleared) {
@@ -210,7 +216,7 @@ isHardMode.onclick = function () {
 };
 function newGame(seed) {
     ans = (0, pkg_1.gen)(N, N, seed);
-    hints = get_hints(N, N, ans);
+    [hints, offset_y, offset_x] = get_hints(N, N, ans);
     board = new Int32Array(N * N).fill(2);
     cursor = { x: 0, y: 0 };
     pre = { x: 0, y: 0, ctrl: false, enter: false, undo: false };
@@ -219,8 +225,8 @@ function newGame(seed) {
     gameover = false;
     undoHistory = new Array([board, { x: 0, y: 0 }]);
     redoHistory = new Array();
-    document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints);
-    document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, 0, 0);
+    document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints, offset_y, offset_x);
+    document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, 0, 0, offset_y, offset_x);
 }
 function hideAll() {
     document.getElementById("foot").style.visibility = 'hidden';
@@ -294,50 +300,23 @@ savePngButton.onclick = function () {
     image.src = "data:image/svg+xml;charset=utf-8;base64," + btoa(unescape(encodeURIComponent(svgData)));
 };
 saveGifButton.onclick = function () {
-    const boards = Int32Array.from(undoHistory.map((his) => Array.from(his[0])).flat());
-    const d = 100 / N;
-    const svgDatas = (0, pkg_1.vis_gif)(N, N, d, boards, undoHistory.length).split("$");
+    const boards = Int32Array.from(undoHistory.slice(1).map((his) => Array.from(his[0])).flat().concat(...board));
+    const d = Math.floor(200 / N);
+    const gifData = (0, pkg_1.vis_gif)(N, N, d, boards, undoHistory.length);
     saveGifButton.disabled = true;
     saveGifButton.value = "Generating GIF...";
-    const _image = new Image;
-    _image.onload = function () {
-        const width = d * N;
-        const height = d * N;
-        const GIFEncoder = require('gifencoder');
-        const encoder = new GIFEncoder(width, height);
-        encoder.setRepeat(-1); // 0 for repeat, -1 for no-repeat
-        encoder.setDelay(200); // frame delay in ms
-        encoder.setQuality(5); // image quality. 10 is default.
-        encoder.start();
-        rec(0);
-        function rec(t) {
-            if (t == undoHistory.length) {
-                encoder.finish();
-                const a = document.createElement("a");
-                const blob = new Blob([encoder.out.getData()], { type: 'image/gif' });
-                a.href = URL.createObjectURL(blob);
-                const seed = seedInput.value;
-                a.download = `${seed}.gif`;
-                a.click();
-                saveGifButton.disabled = false;
-                saveGifButton.value = "Save as Animation GIF";
-                return;
-            }
-            saveGifButton.value = `Generating GIF... ${Math.floor(100 * t / undoHistory.length)}%`;
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            const image = new Image;
-            image.onload = function () {
-                ctx.drawImage(image, 0, 0);
-                encoder.addFrame(ctx);
-                rec(t + 1);
-            };
-            image.src = "data:image/svg+xml;charset=utf-8;base64," + btoa(unescape(encodeURIComponent(svgDatas[t])));
-        }
+    const image = new Image;
+    image.onload = function () {
+        const a = document.createElement("a");
+        const blob = new Blob([gifData], { type: 'image/gif' });
+        a.href = URL.createObjectURL(blob);
+        const seed = seedInput.value;
+        a.download = `${seed}.gif`;
+        a.click();
+        saveGifButton.disabled = false;
+        saveGifButton.value = "Save as Animation GIF";
     };
-    _image.src = "data:image/svg+xml;charset=utf-8;base64," + btoa(unescape(encodeURIComponent(svgDatas[0])));
+    image.src = "data:image/jpg;charset=utf-8;base64," + Buffer.from([...gifData.slice(0, 38), 0x3b]).toString('base64');
 };
 shareButton.onclick = function () {
     const seed = seedInput.value;

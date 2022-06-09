@@ -62,6 +62,7 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "wee_alloc",
+ "weezl",
 ]
 
 [[package]]
@@ -276,6 +277,12 @@ dependencies = [
  "memory_units",
  "winapi",
 ]
+
+[[package]]
+name = "weezl"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c97e489d8f836838d497091de568cf16b117486d529ec5579233521065bd5e4"
 
 [[package]]
 name = "winapi"
