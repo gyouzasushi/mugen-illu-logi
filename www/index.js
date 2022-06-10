@@ -37,6 +37,33 @@ function get_hints(h, w, board) {
     const offset_x = Math.max(max_hints_width * 20, 160) + 40;
     return [new Int32Array(hints), offset_y, offset_x];
 }
+class Timer {
+    constructor() {
+        this.startTime = Date.now();
+        this.counting = false;
+    }
+    reset() {
+        this.startTime = Date.now();
+        this.counting = true;
+        clock.textContent = '00:00:00';
+    }
+    start() {
+        this.countUp();
+    }
+    countUp() {
+        if (!this.counting)
+            return;
+        const elapsed = new Date(Date.now() - this.startTime);
+        clock.textContent = elapsed.toISOString().slice(11, 19);
+        setTimeout(() => {
+            this.countUp();
+        }, 10);
+    }
+    stop() {
+        this.counting = false;
+    }
+}
+const timer = new Timer();
 let N = 5;
 let ans = (0, pkg_1.gen)(N, N, BigInt(0));
 let [hints, offset_y, offset_x] = get_hints(N, N, ans);
@@ -49,6 +76,7 @@ let undoHistory = new Array();
 let redoHistory = new Array();
 let cleared = false;
 let gameover = false;
+let started = false;
 let val = null;
 function isCorrect(board, ans) {
     for (let i = 0; i < N * N; i++) {
@@ -108,6 +136,7 @@ document.onkeydown = function (ev) {
             pre.enter = true;
             if (isHardMode.checked && val !== undefined && ans[cursor.y * N + cursor.x] !== +val) {
                 gameover = true;
+                timer.stop();
                 showGameover();
                 return;
             }
@@ -133,10 +162,20 @@ document.onkeydown = function (ev) {
         document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, cursor.y, cursor.x, offset_y, offset_x);
         pre.x = cursor.x, pre.y = cursor.y, pre.ctrl = false, pre.undo = false;
     }
+    if (!started) {
+        started = true;
+        isHardMode.disabled = true;
+        isTimeAttackMode.disabled = true;
+        if (isTimeAttackMode.checked) {
+            timer.reset();
+            timer.start();
+        }
+    }
     const correct = isCorrect(board, ans);
     if (!cleared && correct) {
         showFoot();
         cleared = true;
+        timer.stop();
         if (isGamingMode.checked) {
             gamingBoardSvgs = (0, pkg_1.vis_gaming_boards)(N, N, board, hints, offset_y, offset_x).split("$");
             let t = 0;
@@ -169,6 +208,8 @@ const sizeSelect = document.getElementById("size");
 const copyButton = document.getElementById("copy");
 const isGamingMode = document.getElementById("gaming");
 const isHardMode = document.getElementById("hard");
+const isTimeAttackMode = document.getElementById("time_attack");
+const clock = document.getElementById("clock");
 const nextButtton = document.getElementById("next");
 const savePngButton = document.getElementById("save_png");
 const saveGifButton = document.getElementById("save_gif");
@@ -214,6 +255,17 @@ isHardMode.onclick = function () {
         sessionStorage.setItem('hard', 'false');
     }
 };
+isTimeAttackMode.onclick = function () {
+    if (isTimeAttackMode.checked) {
+        sessionStorage.setItem('timeAttack', 'true');
+        clock.style.visibility = 'visible';
+        timer.reset();
+    }
+    else {
+        sessionStorage.setItem('timeAttack', 'false');
+        clock.style.visibility = 'hidden';
+    }
+};
 function newGame(seed) {
     ans = (0, pkg_1.gen)(N, N, seed);
     [hints, offset_y, offset_x] = get_hints(N, N, ans);
@@ -221,12 +273,16 @@ function newGame(seed) {
     cursor = { x: 0, y: 0 };
     pre = { x: 0, y: 0, ctrl: false, enter: false, undo: false };
     pressEnter = false;
-    cleared = false;
-    gameover = false;
     undoHistory = new Array([board, { x: 0, y: 0 }]);
     redoHistory = new Array();
     document.getElementById("gyouza").innerHTML = (0, pkg_1.vis_board)(N, N, board, hints, offset_y, offset_x);
     document.getElementById("sushi").innerHTML = (0, pkg_1.vis_cursor)(N, N, 0, 0, offset_y, offset_x);
+    cleared = false;
+    gameover = false;
+    started = false;
+    isHardMode.disabled = false;
+    isTimeAttackMode.disabled = false;
+    timer.reset();
 }
 function hideAll() {
     document.getElementById("foot").style.visibility = 'hidden';
@@ -259,6 +315,7 @@ function load() {
     sizeSelect.options[N / 5 - 1].selected = true;
     isGamingMode.checked = sessionStorage.getItem('gaming') === 'true';
     isHardMode.checked = sessionStorage.getItem('hard') === 'true';
+    isTimeAttackMode.checked = sessionStorage.getItem('timeAttack') === 'true';
     hideAll();
     newGame(BigInt(seed));
 }
@@ -297,7 +354,7 @@ savePngButton.onclick = function () {
         a.download = `${seed}.png`;
         a.click();
     };
-    image.src = "data:image/svg+xml;charset=utf-8;base64," + btoa(unescape(encodeURIComponent(svgData)));
+    image.src = "data:image/svg+xml;charset=utf-8;base64," + Buffer.from(svgData).toString();
 };
 saveGifButton.onclick = function () {
     const boards = Int32Array.from(undoHistory.slice(1).map((his) => Array.from(his[0])).flat().concat(...board));
@@ -320,11 +377,14 @@ saveGifButton.onclick = function () {
 };
 shareButton.onclick = function () {
     const seed = seedInput.value;
-    const text = `無限イラロジ ${N}x${N} の Seed = ${seed} をクリア！🥟🍣`;
+    const clearTime = clock.textContent;
+    const clearTimeText = isTimeAttackMode.checked ? ` ${clearTime} で` : '';
+    const hardText = isHardMode.checked ? ' (Hard)' : '';
+    const text = `無限イラロジ ${N}x${N} の Seed = ${seed}${hardText} を${clearTimeText}クリア！🥟🍣`;
     const url = new URL(location.toString());
     url.searchParams.set('size', `${N}`);
     url.searchParams.set('seed', `${seed}`);
     const hashtag = 'mugen_illu_logi';
-    const link = `https://twitter.com/intent/tweet?hashtags=${hashtag}&text=${text}%0D%0A&url=${url.toString().replace('&', '%26')}`;
+    const link = `https://twitter.com/intent/tweet?hashtags=${hashtag}&text=${text}&url=${url.toString().replace('&', '%26')}`;
     window.open(link);
 };
