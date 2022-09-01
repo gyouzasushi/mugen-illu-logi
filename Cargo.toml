@@ -20,6 +20,7 @@ wee_alloc = { version="0.4.5", optional = true }
 svg = "0.10.0"
 console_error_panic_hook = "0.1.7"
 weezl = "0.1.6"
+proconio = "0.4.3"
 
 [dependencies.web-sys]
 version = "0.3.57"

@@ -316,6 +316,12 @@ function load() {
     isGamingMode.checked = sessionStorage.getItem('gaming') === 'true';
     isHardMode.checked = sessionStorage.getItem('hard') === 'true';
     isTimeAttackMode.checked = sessionStorage.getItem('timeAttack') === 'true';
+    if (isTimeAttackMode.checked) {
+        clock.style.visibility = 'visible';
+    }
+    else {
+        clock.style.visibility = 'hidden';
+    }
     hideAll();
     newGame(BigInt(seed));
 }

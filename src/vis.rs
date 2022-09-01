@@ -726,8 +726,9 @@ mod gif {
             let size_h = self.height as usize / h;
             let size_w = self.height as usize / w;
             let data = (0..self.height as usize)
-                .map(|y| (0..self.width as usize).map(move |x| data[y / size_h][x / size_w] as u8))
-                .flatten()
+                .flat_map(|y| {
+                    (0..self.width as usize).map(move |x| data[y / size_h][x / size_w] as u8)
+                })
                 .collect::<Vec<_>>();
             self.add_inner(&data, delay)?;
             Ok(())
@@ -775,6 +776,8 @@ mod gif {
         }
     }
 }
+
+fn gen_from_density(n: usize, density: usize) {}
 
 #[cfg(test)]
 mod test {

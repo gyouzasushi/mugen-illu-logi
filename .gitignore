@@ -2,3 +2,4 @@
 /.vscode
 /www/node_modules
 /www/dist
+.DS_Store
